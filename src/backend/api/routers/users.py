@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
@@ -24,13 +24,13 @@ class UserCreateSchema(BaseModel):
 class UserResponse(BaseModel):
     """User response schema."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     telegram_id: int
     username: Optional[str]
     first_name: str
     is_active: bool
-
-    model_config = {"from_attributes": True}
 
 
 @router.post("/{telegram_id}/telegram", response_model=UserResponse)
