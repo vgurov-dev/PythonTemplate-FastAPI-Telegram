@@ -21,6 +21,21 @@ class Settings(BaseSettings):
         default="redis://localhost:6379/0", validation_alias="REDIS_URL"
     )
 
+    bot_database_url: str = Field(
+        default="postgresql+asyncpg://user:password@localhost:5432/botdb",
+        validation_alias="BOT_DATABASE_URL",
+    )
+
+    backend_url: str = Field(
+        default="http://backend:8000",
+        validation_alias="BACKEND_URL",
+    )
+
+    service_token: str = Field(
+        default="service-secret-token",
+        validation_alias="SERVICE_TOKEN",
+    )
+
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
 
 

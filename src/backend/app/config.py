@@ -51,6 +51,10 @@ class Settings(BaseSettings):
         default=7, validation_alias="JWT_REFRESH_TOKEN_EXPIRE_DAYS"
     )
 
+    service_token: str = Field(
+        default="service-secret-token", validation_alias="SERVICE_TOKEN"
+    )
+
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
     log_format: str = Field(default="json", validation_alias="LOG_FORMAT")
 
