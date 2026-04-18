@@ -233,6 +233,22 @@ services:
     networks:
       - app-network
 
+  # ==================== PORTAINER ====================
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    restart: unless-stopped
+    ports:
+      - "9443:9443"
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    environment:
+      - PORTAINER_PASSWORD=${PORTAINER_PASSWORD:-admin}
+    networks:
+      - app-network
+
   # ==================== DASHBOARDS ====================
 
   dashboards:
@@ -254,3 +270,4 @@ volumes:
   loki_data:
   grafana_data:
   tempo_data:
+  portainer_data:
