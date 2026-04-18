@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_session
-from app.dependencies import verify_service_token
+from bootstrap.database import get_session
+from bootstrap.dependencies import verify_service_token
 from infrastructure.database.repositories.user import UserRepository
 
 router = APIRouter(prefix="/users", tags=["users"])

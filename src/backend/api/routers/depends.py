@@ -6,9 +6,9 @@ from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
-from app.database import get_session
-from app.exceptions import UnauthorizedException
+from bootstrap.config import settings
+from bootstrap.database import get_session
+from bootstrap.exceptions import UnauthorizedException
 from domain.services.token import (
     TokenDomainService,
     TokenInvalidError,

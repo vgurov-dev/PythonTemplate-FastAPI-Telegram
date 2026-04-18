@@ -36,7 +36,7 @@ async def db_session(anyio_memory_db_pool) -> AsyncGenerator[AsyncSession, None]
 @pytest_asyncio.fixture
 async def http_client() -> AsyncGenerator[AsyncClient, None]:
     """Create test HTTP client for API testing."""
-    from app.main import app
+    from bootstrap.main import app
 
     async with AsyncClient(
         transport=ASGITransport(app=app),

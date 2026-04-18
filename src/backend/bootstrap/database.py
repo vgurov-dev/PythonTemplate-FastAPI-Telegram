@@ -4,7 +4,7 @@ from sqlmodel import SQLModel
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncEngine
 
-from app.config import settings
+from bootstrap.config import settings
 
 
 def create_engine() -> AsyncEngine:

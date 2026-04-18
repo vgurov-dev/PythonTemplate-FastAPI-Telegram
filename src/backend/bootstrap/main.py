@@ -4,10 +4,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import structlog
 
-from app.config import settings
-from app.database import init_db
-from app.metrics import setup_metrics
-from app.tracing import setup_tracing
+from bootstrap.config import settings
+from bootstrap.database import init_db
+from bootstrap.metrics import setup_metrics
+from bootstrap.tracing import setup_tracing
 from api.routers import auth, users
 
 logger = structlog.get_logger()

@@ -1,6 +1,6 @@
 from redis.asyncio import Redis, from_url
 
-from app.config import settings
+from bootstrap.config import settings
 
 
 async def get_redis_client() -> Redis:

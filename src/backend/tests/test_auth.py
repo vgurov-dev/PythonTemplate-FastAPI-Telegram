@@ -181,7 +181,7 @@ class TestAuthAPI:
     @pytest.fixture
     def valid_service_key(self):
         """Get valid service key from settings."""
-        from app.config import settings
+        from bootstrap.config import settings
         return settings.service_key
 
     @pytest.mark.asyncio

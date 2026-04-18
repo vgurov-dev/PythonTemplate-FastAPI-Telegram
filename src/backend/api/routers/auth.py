@@ -4,7 +4,7 @@ from functools import lru_cache
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.config import settings
+from bootstrap.config import settings
 from application.dto.auth import (
     LoginRequest,
     RefreshRequest,
