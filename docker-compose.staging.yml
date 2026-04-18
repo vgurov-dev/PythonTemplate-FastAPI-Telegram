@@ -161,9 +161,11 @@ services:
       - app-network
 
   nginx_exporter:
-    image: nginx/nginx-ingress-controller:alpine
+    image: nginx/nginx-prometheus-exporter:latest
     restart: unless-stopped
-    command: - /usr/local/bin/nginx_exporter
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
     ports:
       - "9113:9113"
     depends_on:
