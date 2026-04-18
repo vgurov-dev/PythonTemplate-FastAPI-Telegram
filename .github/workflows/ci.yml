@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  lint-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install backend dependencies
+        working-directory: .
+        run: poetry install --with backend
+
+      - name: Run Ruff linter
+        run: poetry run ruff check src/backend/
+
+      - name: Run Black formatter check
+        run: poetry run black --check src/backend/
+
+      - name: Run type check
+        run: poetry run mypy src/backend/
+
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install backend dependencies
+        run: poetry install --with backend,dev
+
+      - name: Run backend tests
+        run: poetry run pytest src/backend/tests/ -v --cov=src/backend
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./coverage
+          files: coverage.xml
+
+  lint-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install bot dependencies
+        run: poetry install --with bot
+
+      - name: Run Ruff linter
+        run: poetry run ruff check src/bot/
+
+  lint-webapp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install webapp dependencies
+        working-directory: src/webapp
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: src/webapp
+        run: npm run lint
+
+      - name: Build webapp
+        working-directory: src/webapp
+        run: npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [lint-backend, test-backend, lint-bot, lint-webapp]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/backend/Dockerfile
+          push: false
+          tags: my-service/backend:latest
+
+      - name: Build bot Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/bot/Dockerfile
+          push: false
+          tags: my-service/bot:latest
+
+      - name: Build webapp Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src/webapp
+          file: src/webapp/Dockerfile
+          push: false
+          tags: my-service/webapp:latest
