@@ -1,13 +1,14 @@
 [tool.poetry]
-name = "my-service"
+name = "telegram-template"
 version = "0.1.0"
-description = "FastAPI service with DDD architecture"
+description = "Telegram Template - Bot + WebApp + Backend"
 authors = ["Author <author@email.com>"]
 readme = "README.md"
-packages = [{include = "app"}, {include = "domain"}, {include = "application"}, {include = "infrastructure"}, {include = "api"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
+
+[tool.poetry.group.backend.dependencies]
 fastapi = "^0.115.0"
 uvicorn = {extras = ["standard"], version = "^0.34.0"}
 sqlmodel = "^0.0.20"
@@ -23,34 +24,21 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-multipart = "^0.0.20"
 structlog = "^24.4.0"
 
+[tool.poetry.group.bot.dependencies]
+aiogram = "^3.4.1"
+redis = "^5.2.0"
+structlog = "^24.4.0"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
 pytest-asyncio = "^0.24.0"
 pytest-cov = "^6.0.0"
 httpx = "^0.28.1"
-aioredis = "^2.0.1"
 aiosqlite = "^0.20.0"
 
 [tool.poetry.scripts]
-my-service = "app.main:app"
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = "-v --cov=app --cov-report=term-missing"
-
-[tool.coverage.run]
-source = ["app", "domain", "application", "infrastructure", "api"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "if __name__ == .__main__.:",
-    "raise NotImplementedError",
-]
+backend = "src.backend.app.main:app"
+bot = "src.bot.main:main"
 
 [build-system]
 requires = ["poetry-core"]
