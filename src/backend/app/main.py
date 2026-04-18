@@ -6,6 +6,8 @@ import structlog
 
 from app.config import settings
 from app.database import init_db
+from app.metrics import setup_metrics
+from app.tracing import setup_tracing
 
 logger = structlog.get_logger()
 
@@ -15,6 +17,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     logger.info("application_starting", app=settings.app_name)
     await init_db()
+    setup_tracing()
     yield
     logger.info("application_shutdown", app=settings.app_name)
 
@@ -24,6 +27,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+setup_metrics(app)
 
 app.add_middleware(
     CORSMiddleware,
