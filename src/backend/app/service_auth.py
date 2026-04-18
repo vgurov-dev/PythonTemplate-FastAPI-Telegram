@@ -12,11 +12,11 @@ from app.config import settings
 security = HTTPBearer(auto_error=False)
 
 
-def create_service_token(service_name: str, expires_hours: int = 24) -> str:
+def create_service_token(service_name: str, expires_seconds: int = 86400) -> str:
     """Create JWT token for service."""
     payload = {
         "service": service_name,
-        "exp": datetime.utcnow() + timedelta(hours=expires_hours),
+        "exp": datetime.utcnow() + timedelta(seconds=expires_seconds),
         "iat": datetime.utcnow(),
     }
     return jwt.encode(

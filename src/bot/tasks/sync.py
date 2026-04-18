@@ -32,7 +32,7 @@ def get_service_token() -> str:
     if (
         settings.service_token
         and current_time < settings.service_token_expires_at - 300
-    ):
+    ):  # refresh 5 minutes before expiry
         return settings.service_token
 
     try:

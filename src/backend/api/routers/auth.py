@@ -50,7 +50,7 @@ async def login(request: LoginRequest) -> TokenResponse:
     service_name = request.service_name or "bot"
     token = create_service_token(
         service_name,
-        expires_hours=settings.service_token_expire_hours,
+        expires_seconds=settings.service_token_expire_seconds,
     )
 
     payload = verify_service_token(token)
@@ -77,7 +77,7 @@ async def refresh(request: RefreshRequest) -> TokenResponse:
 
     token = create_service_token(
         service_name,
-        expires_hours=settings.service_token_expire_hours,
+        expires_seconds=settings.service_token_expire_seconds,
     )
 
     new_payload = verify_service_token(token)

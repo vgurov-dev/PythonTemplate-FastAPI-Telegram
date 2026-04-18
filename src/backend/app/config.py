@@ -54,8 +54,8 @@ class Settings(BaseSettings):
     service_key: str = Field(
         default="service-secret-key", validation_alias="SERVICE_KEY"
     )
-    service_token_expire_hours: int = Field(
-        default=24, validation_alias="SERVICE_TOKEN_EXPIRE_HOURS"
+    service_token_expire_seconds: int = Field(
+        default=86400, validation_alias="SERVICE_TOKEN_EXPIRE_SECONDS"
     )
 
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
