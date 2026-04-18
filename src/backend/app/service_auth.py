@@ -1,10 +1,10 @@
 """Service-to-service authentication with JWT."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
 
 from app.config import settings
 
@@ -16,8 +16,8 @@ def create_service_token(service_name: str, expires_seconds: int = 86400) -> str
     """Create JWT token for service."""
     payload = {
         "service": service_name,
-        "exp": datetime.utcnow() + timedelta(seconds=expires_seconds),
-        "iat": datetime.utcnow(),
+        "exp": datetime.now(timezone.utc).timestamp() + expires_seconds,
+        "iat": datetime.now(timezone.utc).timestamp(),
     }
     return jwt.encode(
         payload,
@@ -36,7 +36,7 @@ def verify_service_token(token: str) -> dict:
         )
 
         exp = payload.get("exp")
-        if exp and datetime.fromtimestamp(exp) < datetime.utcnow():
+        if exp and exp < datetime.now(timezone.utc).timestamp():
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token expired",
@@ -51,7 +51,7 @@ def verify_service_token(token: str) -> dict:
 
         return payload
 
-    except JWTError:
+    except jwt.exceptions.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",

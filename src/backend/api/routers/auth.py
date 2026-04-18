@@ -1,5 +1,5 @@
 """Auth API router."""
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -54,7 +54,8 @@ async def login(request: LoginRequest) -> TokenResponse:
     )
 
     payload = verify_service_token(token)
-    exp = datetime.fromtimestamp(payload.get("exp"))
+    exp_timestamp = payload.get("exp")
+    exp = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
 
     return TokenResponse(
         token=token,
@@ -81,7 +82,8 @@ async def refresh(request: RefreshRequest) -> TokenResponse:
     )
 
     new_payload = verify_service_token(token)
-    exp = datetime.fromtimestamp(new_payload.get("exp"))
+    exp_timestamp = new_payload.get("exp")
+    exp = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
 
     return TokenResponse(
         token=token,
