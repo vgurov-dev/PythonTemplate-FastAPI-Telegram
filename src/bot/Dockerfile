@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
-RUN pip install poetry && poetry config virtualenvs.create false && poetry install --no-interaction --with bot
+RUN pip install poetry && poetry config virtualenvs.create false && poetry install --no-interaction --with bot --no-root
 
 COPY src/bot/ ./src/bot/
 WORKDIR /app/src/bot

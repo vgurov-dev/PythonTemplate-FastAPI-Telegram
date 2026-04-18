@@ -1,8 +1,8 @@
 """Login action - authenticate service and return JWT token."""
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from application.dto.auth import LoginRequest, TokenResponse
-from domain.services.token import TokenDomainService, InvalidTokenError
+from domain.services.token import TokenDomainService, TokenInvalidError
 
 
 class LoginAction:
@@ -20,24 +20,20 @@ class LoginAction:
 
     async def execute(self, request: LoginRequest) -> TokenResponse:
         """Execute login action."""
-        if not request.service_key:
-            raise ValueError("service_key is required")
-
         if request.service_key != self._service_key:
-            raise InvalidTokenError("Invalid service_key")
+            raise TokenInvalidError("Invalid service_key")
 
-        service_name = request.service_name or "bot"
+        service_name = request.service_name
         token = self._token_service.create_token(
             service_name,
             expires_seconds=self._token_expire_seconds,
         )
 
-        payload = self._token_service.verify_token(token)
-        exp = datetime.fromtimestamp(payload.exp, tz=timezone.utc)
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=self._token_expire_seconds)
 
         return TokenResponse(
             token=token,
-            expires_at=exp,
+            expires_at=expires_at,
             service=service_name,
         )
 

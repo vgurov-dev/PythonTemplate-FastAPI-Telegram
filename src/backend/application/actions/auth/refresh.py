@@ -1,10 +1,10 @@
 """Refresh token action - refresh JWT token."""
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from application.dto.auth import RefreshRequest, TokenResponse
 from domain.services.token import (
     TokenDomainService,
-    InvalidTokenError,
+    TokenInvalidError,
     TokenExpiredError,
 )
 
@@ -25,20 +25,18 @@ class RefreshTokenAction:
         try:
             old_payload = self._token_service.verify_token(request.token)
             service_name = old_payload.service
-        except (InvalidTokenError, TokenExpiredError):
-            raise InvalidTokenError("Invalid or expired token")
+        except (TokenInvalidError, TokenExpiredError):
+            raise TokenInvalidError("Invalid or expired token")
 
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=self._token_expire_seconds)
         token = self._token_service.create_token(
             service_name,
             expires_seconds=self._token_expire_seconds,
         )
 
-        new_payload = self._token_service.verify_token(token)
-        exp = datetime.fromtimestamp(new_payload.exp, tz=timezone.utc)
-
         return TokenResponse(
             token=token,
-            expires_at=exp,
+            expires_at=expires_at,
             service=service_name,
         )
 

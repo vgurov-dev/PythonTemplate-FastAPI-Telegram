@@ -9,16 +9,6 @@ from httpx import AsyncClient, ASGITransport
 from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-pytest_plugins = ["pytest_asyncio"]
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async tests."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
 
 @pytest.fixture
 def anyio_memory_db_pool():
@@ -44,7 +34,7 @@ async def db_session(anyio_memory_db_pool) -> AsyncGenerator[AsyncSession, None]
 
 
 @pytest_asyncio.fixture
-async def client() -> AsyncGenerator[AsyncClient, None]:
+async def http_client() -> AsyncGenerator[AsyncClient, None]:
     """Create test HTTP client for API testing."""
     from app.main import app
 
@@ -53,6 +43,12 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
         base_url="http://test",
     ) as client:
         yield client
+
+
+@pytest.fixture
+def client(http_client):
+    """Alias for http_client."""
+    return http_client
 
 
 @pytest.fixture
