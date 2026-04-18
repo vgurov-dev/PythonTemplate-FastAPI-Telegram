@@ -1,92 +1,83 @@
 """Auth API router."""
-from datetime import datetime, timezone
-from typing import Optional
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.config import settings
-from app.service_auth import create_service_token, verify_service_token
+from application.dto.auth import (
+    LoginRequest,
+    RefreshRequest,
+    TokenResponse,
+)
+from application.actions.auth.login import create_login_action
+from application.actions.auth.refresh import create_refresh_action
+from domain.services.token import (
+    create_token_service,
+    InvalidTokenError,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+security = HTTPBearer(auto_error=False)
 
+token_service = create_token_service(
+    secret_key=settings.jwt_secret_key,
+    algorithm=settings.jwt_algorithm,
+)
 
-class LoginRequest(BaseModel):
-    """Login request schema."""
+login_action = create_login_action(
+    token_service=token_service,
+    service_key=settings.service_key,
+    token_expire_seconds=settings.service_token_expire_seconds,
+)
 
-    service_key: Optional[str] = None
-    service_name: Optional[str] = "bot"
-
-
-class RefreshRequest(BaseModel):
-    """Refresh token request schema."""
-
-    token: str
-
-
-class TokenResponse(BaseModel):
-    """Token response schema."""
-
-    token: str
-    expires_at: datetime
-    service: str
+refresh_action = create_refresh_action(
+    token_service=token_service,
+    token_expire_seconds=settings.service_token_expire_seconds,
+)
 
 
 @router.post("/login", response_model=TokenResponse)
 async def login(request: LoginRequest) -> TokenResponse:
     """Login endpoint - get JWT token."""
-    if not request.service_key:
+    try:
+        return await login_action.execute(request)
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="service_key required",
+            detail=str(e),
         )
-
-    if request.service_key != settings.service_key:
+    except InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid service_key",
         )
-
-    service_name = request.service_name or "bot"
-    token = create_service_token(
-        service_name,
-        expires_seconds=settings.service_token_expire_seconds,
-    )
-
-    payload = verify_service_token(token)
-    exp_timestamp = payload.get("exp")
-    exp = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
-
-    return TokenResponse(
-        token=token,
-        expires_at=exp,
-        service=service_name,
-    )
 
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh(request: RefreshRequest) -> TokenResponse:
     """Refresh endpoint - refresh JWT token."""
     try:
-        old_payload = verify_service_token(request.token)
-        service_name = old_payload.get("service")
-    except HTTPException:
+        return await refresh_action.execute(request)
+    except InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
         )
 
-    token = create_service_token(
-        service_name,
-        expires_seconds=settings.service_token_expire_seconds,
-    )
 
-    new_payload = verify_service_token(token)
-    exp_timestamp = new_payload.get("exp")
-    exp = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+async def verify_service(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> dict:
+    """Verify service token for inter-service communication."""
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Service token required",
+        )
 
-    return TokenResponse(
-        token=token,
-        expires_at=exp,
-        service=service_name,
-    )
+    try:
+        return token_service.verify_token(credentials.credentials)
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )

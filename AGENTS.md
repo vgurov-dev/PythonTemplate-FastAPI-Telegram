@@ -23,11 +23,26 @@
 ```
 src/backend/
 ├── app/              # Точка входа, конфигурация
-├── domain/           # Сущности (entities)
-├── application/     # Use cases, DTO
+├── domain/           # Сущности (entities) + services (domain logic)
+├── application/     # actions (use cases), DTO
 ├── infrastructure/   # DB, cache, tasks
-└── api/            # Роутеры FastAPI
+└── api/            # Роутеры FastAPI (только orchestration)
 ```
+
+### DDD Правила
+- Все business logic в domain/services/
+- Use cases в application/actions/{group}/
+- Pydantic схемы в application/dto/
+- API routers только orchestration (вызов actions, возврат response)
+- НЕ: логика в api/routers/ — только импорт и вызов
+- НЕ: валидация в domain — только application/dto/
+
+### Примеры (DDD)
+- ПРАВИЛЬНО: `from domain.services.token import TokenDomainService`
+- ПРАВИЛЬНО: `from app.actions.auth.login import LoginAction`
+- ПРАВИЛЬНО: `from application.dto.auth import LoginRequest`
+- НЕПРАВИЛЬНО: `jwt.encode()` в api/routers/
+- НЕПРАВИЛЬНО: бизнес-логика в domain entities
 
 ### API
 - Все endpoint защищать сDepends(verify_service_token) для межсервисной auth
