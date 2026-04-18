@@ -7,7 +7,8 @@ import structlog
 
 from bot.app.config import settings
 from bot.database import async_session
-from bot.handlers.registration import get_agreement_keyboard, CONSENT_TEXT
+from bot.handlers.registration import CONSENT_TEXT
+from bot.keyboards.registration import get_agreement_keyboard
 from bot.models.signup import SignupStatus
 from bot.services.signup import SignupService
 from bot.tasks.sync import sync_user_to_backend
