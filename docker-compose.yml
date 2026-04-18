@@ -13,15 +13,7 @@ services:
       - postgres
       - redis
     volumes:
-      - ./pyproject.toml:/app/pyproject.toml
-      - ./src/backend/bootstrap:/app/bootstrap
-      - ./src/backend/application:/app/application
-      - ./src/backend/domain:/app/domain
-      - ./src/backend/infrastructure:/app/infrastructure
-      - ./src/backend/api:/app/api
-      - ./src/backend/tests:/app/tests
-      - ./src/backend/alembic:/app/alembic
-      - ./src/backend/alembic.ini:/app/alembic.ini
+      - ./src/backend/:/app/
     command: poetry run uvicorn bootstrap.main:app --host 0.0.0.0 --port 8000 --reload
 
   bot:

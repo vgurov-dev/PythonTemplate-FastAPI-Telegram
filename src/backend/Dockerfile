@@ -10,8 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml ./
 RUN pip install poetry && poetry config virtualenvs.create false && poetry install --no-interaction --no-root
 
-COPY src/backend/ ./src/backend/
-WORKDIR /app
+COPY src/backend/ /app/
 
 ENV PYTHONPATH=/app
 

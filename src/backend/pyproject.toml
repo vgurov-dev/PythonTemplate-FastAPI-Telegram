@@ -1,0 +1,65 @@
+[tool.poetry]
+name = "telegram-template"
+version = "0.1.0"
+description = "Telegram Template - Bot + WebApp + Backend"
+authors = ["Author <author@email.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+[tool.poetry.group.backend.dependencies]
+fastapi = "~0.115.0"
+uvicorn = {extras = ["standard"], version = "~0.34.0"}
+sqlmodel = "~0.0.20"
+sqlalchemy = {extras = ["asyncio"], version = "~2.0.36"}
+alembic = "~1.14.0"
+psycopg2-binary = "~2.9.10"
+asyncpg = "~0.30.0"
+redis = "~5.2.0"
+celery = "~5.4.0"
+pydantic-settings = "~2.6.1"
+pyjwt = "~2.8.0"
+passlib = {extras = ["bcrypt"], version = "~1.7.4"}
+python-multipart = "~0.0.20"
+structlog = "~24.4.0"
+prometheus-client = "~0.20.0"
+opentelemetry-api = "^1.41.0"
+opentelemetry-sdk = "^1.41.0"
+opentelemetry-exporter-otlp = "^1.41.0"
+opentelemetry-instrumentation-fastapi = "^0.62b0"
+
+[tool.poetry.group.bot.dependencies]
+aiogram = "~3.7.0"
+redis = "~5.2.0"
+structlog = "~24.4.0"
+sqlalchemy = {extras = ["asyncio"], version = "~2.0.36"}
+asyncpg = "~0.30.0"
+httpx = "~0.28.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "~8.3.4"
+pytest-asyncio = "~0.24.0"
+pytest-cov = "~6.0.0"
+pytest-mock = "~3.14.0"
+httpx = "~0.28.1"
+aiosqlite = "~0.20.0"
+ruff = "~0.4.4"
+black = "~24.4.2"
+mypy = "~1.10.0"
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "session"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "tdd: TDD tests",
+]
+
+[tool.poetry.scripts]
+backend = "app.main:app"
+bot = "bot.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
