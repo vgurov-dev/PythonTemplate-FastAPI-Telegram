@@ -60,6 +60,7 @@ async def handle_agreement(callback: CallbackQuery) -> None:
     await callback.answer()
 
     if data == "disagree":
+        await callback.message.delete()
         await callback.message.answer(
             "❌ Нажмите /start повторно, когда будете согласны.",
         )
@@ -72,6 +73,7 @@ async def handle_agreement(callback: CallbackQuery) -> None:
         service = SignupService(session)
 
         if await service.is_confirmed(telegram_id):
+            await callback.message.delete()
             await callback.message.answer(
                 f"Привет, {first_name}!\n\n"
                 "Вы уже подтвердили согласие ранее.",
@@ -83,8 +85,6 @@ async def handle_agreement(callback: CallbackQuery) -> None:
             status=SignupStatus.CONFIRMED,
         )
 
-        signup = await service.get_by_telegram_id(telegram_id)
-
     sync_user_to_backend.delay(
         telegram_id=telegram_id,
         username=username,
@@ -93,6 +93,7 @@ async def handle_agreement(callback: CallbackQuery) -> None:
 
     logger.info("user_confirmed", telegram_id=telegram_id)
 
+    await callback.message.delete()
     await callback.message.answer(
         f"✅ Спасибо, {first_name}!\n\n"
         "Вы успешно зарегистрированы.",

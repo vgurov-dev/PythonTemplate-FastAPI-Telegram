@@ -113,3 +113,16 @@ src/webapp/
 - CI: lint + test + build на push
 - CD: пуш в GHCR на merge в main
 - Docker образы тегировать по git tag
+
+## Skills
+
+### /.opencode/skills/docker-compose/SKILL.md
+- Все сервисы запускать через docker-compose
+- Не использовать poetry run напрямую
+- Smoke test: docker-compose up -d + curl
+- Тесты: docker-compose exec {service} pytest
+
+### /.opencode/skills/bot/SKILL.md
+- Inline keyboard: удалять сообщение после нажатия кнопки
+- Обязательно вызывать callback.answer()
+- Создавать новое сообщение вместо старого
