@@ -1,8 +1,6 @@
 """Domain service for JWT token management."""
-from datetime import datetime, timezone
-from typing import Optional
-
 import jwt
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError as JWTInvalidTokenError
 
 
 class TokenExpiredError(Exception):
@@ -28,6 +26,8 @@ class TokenDomainService:
         expires_seconds: int = 86400,
     ) -> str:
         """Create JWT token for service."""
+        from datetime import datetime, timezone
+
         now = datetime.now(timezone.utc).timestamp()
         payload = {
             "service": service_name,
@@ -45,17 +45,15 @@ class TokenDomainService:
                 algorithms=[self._algorithm],
             )
 
-            exp = payload.get("exp")
-            if exp and exp < datetime.now(timezone.utc).timestamp():
-                raise TokenExpiredError()
-
             service = payload.get("service")
             if not service:
                 raise InvalidTokenError()
 
             return payload
 
-        except jwt.exceptions.InvalidTokenError:
+        except ExpiredSignatureError:
+            raise TokenExpiredError()
+        except JWTInvalidTokenError:
             raise InvalidTokenError()
 
     def get_service_name(self, token: str) -> str:
