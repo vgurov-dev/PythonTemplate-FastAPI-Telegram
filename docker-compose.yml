@@ -14,7 +14,7 @@ services:
       - redis
     volumes:
       - ./src/backend:/app
-    command: poetry run uvicorn src.backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   bot:
     build:
@@ -26,7 +26,7 @@ services:
       - redis
     volumes:
       - ./src/bot:/app
-    command: poetry run python -m src.bot.main
+    command: poetry run python -m bot.main
 
   webapp:
     build:
@@ -67,7 +67,7 @@ services:
       - postgres
     volumes:
       - ./src/backend:/app
-    command: poetry run celery -A src.backend.app.main.celery worker --loglevel=info
+    command: poetry run celery -A app.main.celery worker --loglevel=info
 
   celery_beat:
     build:
@@ -80,7 +80,7 @@ services:
       - postgres
     volumes:
       - ./src/backend:/app
-    command: poetry run celery -A src.backend.app.main.celery beat --loglevel=info
+    command: poetry run celery -A app.main.celery beat --loglevel=info
 
 volumes:
   postgres_data:

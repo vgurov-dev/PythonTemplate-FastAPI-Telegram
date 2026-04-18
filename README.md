@@ -46,7 +46,7 @@ cp .env.example .env
 
 ```bash
 # Локально (backend + bot)
-poetry run uvicorn src.backend.app.main:app --reload --port 8000
+poetry run uvicorn app.main:app --reload --port 8000
 
 # Docker Compose (все сервисы)
 docker-compose up --build
@@ -68,7 +68,7 @@ docker-compose up --build
 
 ```bash
 # Запуск
-poetry run uvicorn src.backend.app.main:app --reload
+poetry run uvicorn app.main:app --reload
 
 # Тесты
 poetry run pytest src/backend/tests/
@@ -82,7 +82,7 @@ poetry run alembic upgrade head
 
 ```bash
 # Запуск
-poetry run python -m src.bot.main
+poetry run python -m bot.main
 ```
 
 ### WebApp

@@ -46,8 +46,8 @@ black = "^24.4.2"
 mypy = "^1.10.0"
 
 [tool.poetry.scripts]
-backend = "src.backend.app.main:app"
-bot = "src.bot.main:main"
+backend = "app.main:app"
+bot = "bot.main:main"
 
 [build-system]
 requires = ["poetry-core"]

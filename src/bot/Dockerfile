@@ -12,4 +12,4 @@ RUN pip install poetry && poetry config virtualenvs.create false && poetry insta
 COPY src/bot/ ./src/bot/
 WORKDIR /app/src/bot
 
-CMD ["python", "-m", "src.bot.main"]
+CMD ["python", "-m", "bot.main"]

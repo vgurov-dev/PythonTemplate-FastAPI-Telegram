@@ -29,7 +29,7 @@ bot/
 
 ```bash
 poetry install --with bot
-poetry run python -m src.bot.main
+poetry run python -m bot.main
 ```
 
 ## Примеры команд

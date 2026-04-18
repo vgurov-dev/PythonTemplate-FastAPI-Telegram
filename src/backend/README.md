@@ -39,7 +39,7 @@ backend/
 
 ```bash
 poetry install --with backend
-poetry run uvicorn src.backend.app.main:app --reload
+poetry run uvicorn app.main:app --reload
 ```
 
 ## Тесты
