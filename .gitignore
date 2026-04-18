@@ -28,7 +28,7 @@ htmlcov/
 .hypothesis/
 
 .env
-.venv
+.venv/
 env/
 venv/
 ENV/
@@ -44,3 +44,13 @@ venv.bak/
 
 alembic/versions/*.py
 !alembic/versions/.gitkeep
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite3
+
+# OS
+Thumbs.db
