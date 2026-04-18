@@ -1,4 +1,5 @@
 """Sync tasks for bot-backend communication."""
+import time
 from typing import Optional
 
 import httpx
@@ -24,6 +25,41 @@ celery.conf.update(
 )
 
 
+def get_service_token() -> str:
+    """Get or refresh service token."""
+    current_time = time.time()
+
+    if (
+        settings.service_token
+        and current_time < settings.service_token_expires_at - 300
+    ):
+        return settings.service_token
+
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(
+                f"{settings.backend_url}/auth/login",
+                json={
+                    "service_key": settings.service_key,
+                    "service_name": "bot",
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        settings.service_token = data["token"]
+        settings.service_token_expires_at = data["expires_at"].timestamp()
+
+        logger.info("service_token_refreshed")
+        return settings.service_token
+
+    except httpx.HTTPError as e:
+        logger.error("token_refresh_failed", error=str(e))
+        if settings.service_token:
+            return settings.service_token
+        raise
+
+
 @celery.task(name="sync_telegram_user")
 def sync_user_to_backend(
     telegram_id: int,
@@ -32,6 +68,8 @@ def sync_user_to_backend(
 ) -> dict:
     """Sync confirmed user to backend API."""
     try:
+        token = get_service_token()
+
         with httpx.Client(timeout=30.0) as client:
             response = client.post(
                 f"{settings.backend_url}/users/{telegram_id}/telegram",
@@ -41,7 +79,7 @@ def sync_user_to_backend(
                     "first_name": first_name,
                 },
                 headers={
-                    "Authorization": f"Bearer {settings.service_token}",
+                    "Authorization": f"Bearer {token}",
                 },
             )
             response.raise_for_status()

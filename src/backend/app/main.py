@@ -8,7 +8,7 @@ from app.config import settings
 from app.database import init_db
 from app.metrics import setup_metrics
 from app.tracing import setup_tracing
-from api.routers import users
+from api.routers import auth, users
 
 logger = structlog.get_logger()
 
@@ -40,6 +40,7 @@ app.add_middleware(
 )
 
 app.include_router(users.router)
+app.include_router(auth.router)
 
 
 @app.get("/health")

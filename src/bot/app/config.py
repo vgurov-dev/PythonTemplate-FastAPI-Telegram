@@ -31,10 +31,13 @@ class Settings(BaseSettings):
         validation_alias="BACKEND_URL",
     )
 
-    service_token: str = Field(
-        default="service-secret-token",
-        validation_alias="SERVICE_TOKEN",
+    service_key: str = Field(
+        default="service-secret-key",
+        validation_alias="SERVICE_KEY",
     )
+
+    service_token: str = Field(default="")
+    service_token_expires_at: float = Field(default=0)
 
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
 
