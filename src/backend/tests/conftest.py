@@ -6,7 +6,10 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
-from sqlmodel import SQLModel, create_async_engine, AsyncSession
+from sqlmodel import SQLModel
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
+pytest_plugins = ["pytest_asyncio"]
 
 
 @pytest.fixture(scope="session")
@@ -41,9 +44,9 @@ async def db_session(anyio_memory_db_pool) -> AsyncGenerator[AsyncSession, None]
 
 
 @pytest_asyncio.fixture
-async def http_client() -> AsyncGenerator[AsyncClient, None]:
+async def client() -> AsyncGenerator[AsyncClient, None]:
     """Create test HTTP client for API testing."""
-    from src.backend.app.main import app
+    from app.main import app
 
     async with AsyncClient(
         transport=ASGITransport(app=app),

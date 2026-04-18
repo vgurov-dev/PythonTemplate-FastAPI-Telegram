@@ -3,7 +3,8 @@ from typing import Annotated
 
 from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError as JWTInvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -29,7 +30,7 @@ async def get_current_user(
             algorithms=[settings.jwt_algorithm],
         )
         return payload
-    except JWTError:
+    except JWTInvalidTokenError:
         raise UnauthorizedException(detail="Invalid token")
 
 

@@ -78,7 +78,9 @@ def setup_metrics(app: FastAPI) -> None:
         return response
 
     # Set app info
+    import time
+
     app_version.set(1)
-    app_start_time.set(start_time)
+    app_start_time.set(time.time())
 
     logger.info("metrics_initialized")

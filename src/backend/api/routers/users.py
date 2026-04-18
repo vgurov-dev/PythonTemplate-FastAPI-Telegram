@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
-from app.service_auth import verify_service_token
+from app.dependencies import verify_service_token
 from infrastructure.database.repositories.user import UserRepository
 
 router = APIRouter(prefix="/users", tags=["users"])

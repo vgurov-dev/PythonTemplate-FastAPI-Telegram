@@ -1,5 +1,6 @@
 """Health check tests."""
 import pytest
+from httpx import AsyncClient
 
 
 @pytest.mark.asyncio

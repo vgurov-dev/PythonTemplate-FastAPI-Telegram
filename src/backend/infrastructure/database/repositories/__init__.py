@@ -3,14 +3,11 @@ from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, Optional, List
 from uuid import UUID
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select as sqlmodel_select
-
-from domain.entities import BaseEntity
+from sqlmodel import SQLModel, select as sqlmodel_select
 
 
-ModelType = TypeVar("ModelType", bound=BaseEntity)
+ModelType = TypeVar("ModelType", bound=SQLModel)
 
 
 class BaseRepository(Generic[ModelType], ABC):

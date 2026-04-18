@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 
 import jwt
-from jwt.exceptions import ExpiredSignatureError, JWTInvalidTokenError
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from pydantic import ValidationError
 
 from application.dto.token import TokenPayload
