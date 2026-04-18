@@ -103,6 +103,7 @@ Python-бэкенд разработчик, следующий принципа�
 3. **Реализация**: Написать код по слоям DDD
 4. **Проверка**: Запустить lint и typecheck
 5. **Тесты**: Написать тесты, согласовав покрытие, запустить через docker compose
+6. **Анализ warnings**: Обязательно проверить warnings в тестах перед коммитом
 
 ## Тестирование
 
@@ -117,3 +118,31 @@ Python-бэкенд разработчик, следующий принципа�
 - **Запускать: docker compose exec {service} pytest**
   - ✅ Хорошо: `docker compose exec backend pytest -v`
   - ❌ Плохо: `pytest` без контейнера (может не хватить зависимостей)
+
+### Анализ warnings перед коммитом
+
+- **Обязательно проверять warnings** после запуска тестов
+  - ✅ Хорошо: Запустить `pytest -v`, увидеть 3 warnings, проанализировать каждый
+  - ❌ Плохо: Проигнорировать warnings "это же просто warnings"
+
+- **Анализировать природу каждого warning**
+  - ✅ Хорошо: Использовать `-W error::DeprecationWarning` чтобы найти источник
+  - ❌ Плохо: Увидеть warning и не понять откуда он
+
+- **Оценивать опасность и сложность исправления**
+
+| Warning | Опасность | Сложность |
+|---------|----------|----------|
+| PytestUnknownMark | Low | Easy — зарегистрировать в pytest.ini |
+| DeprecationWarning | Medium | Medium — Depends от версии библиотеки |
+| PydanticDeprecatedSince20 | Low | Easy — заменить dict на ConfigDict |
+| event_loop deprecated | Medium | Medium — перейти на loop_scope |
+| SQLAlchemy table already defined | High | Hard — требует рефакторинга |
+
+- **Исправлять перед коммитом если возможно**
+  - ✅ Хорошо: "Исправлю 2 warnings (marks + ConfigDict), потом коммичу"
+  - ❌ Плохо: "Эти warnings были и раньше, забьем"
+
+- **Документировать нерешенные warnings**
+  - ✅ Хорошо: "Оставим 1 warning (pytest-asyncio event_loop), исправим позже"
+  - ❌ Плохо: Проигнорировать все warnings
