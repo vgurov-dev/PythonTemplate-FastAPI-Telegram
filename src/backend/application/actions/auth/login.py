@@ -33,8 +33,7 @@ class LoginAction:
         )
 
         payload = self._token_service.verify_token(token)
-        exp_timestamp = payload.get("exp")
-        exp = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+        exp = datetime.fromtimestamp(payload.exp, tz=timezone.utc)
 
         return TokenResponse(
             token=token,

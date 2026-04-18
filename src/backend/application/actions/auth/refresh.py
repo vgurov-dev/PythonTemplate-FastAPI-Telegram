@@ -24,7 +24,7 @@ class RefreshTokenAction:
         """Execute refresh token action."""
         try:
             old_payload = self._token_service.verify_token(request.token)
-            service_name = old_payload.get("service")
+            service_name = old_payload.service
         except (InvalidTokenError, TokenExpiredError):
             raise InvalidTokenError("Invalid or expired token")
 
@@ -34,8 +34,7 @@ class RefreshTokenAction:
         )
 
         new_payload = self._token_service.verify_token(token)
-        exp_timestamp = new_payload.get("exp")
-        exp = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+        exp = datetime.fromtimestamp(new_payload.exp, tz=timezone.utc)
 
         return TokenResponse(
             token=token,

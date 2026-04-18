@@ -1,6 +1,11 @@
 """Domain service for JWT token management."""
+from datetime import datetime, timezone
+
 import jwt
-from jwt.exceptions import ExpiredSignatureError, InvalidTokenError as JWTInvalidTokenError
+from jwt.exceptions import ExpiredSignatureError, JWTInvalidTokenError
+from pydantic import ValidationError
+
+from application.dto.token import TokenPayload
 
 
 class TokenExpiredError(Exception):
@@ -26,8 +31,6 @@ class TokenDomainService:
         expires_seconds: int = 86400,
     ) -> str:
         """Create JWT token for service."""
-        from datetime import datetime, timezone
-
         now = datetime.now(timezone.utc).timestamp()
         payload = {
             "service": service_name,
@@ -36,30 +39,25 @@ class TokenDomainService:
         }
         return jwt.encode(payload, self._secret_key, algorithm=self._algorithm)
 
-    def verify_token(self, token: str) -> dict:
-        """Verify JWT token and return payload."""
+    def verify_token(self, token: str) -> TokenPayload:
+        """Verify JWT token and return validated payload."""
         try:
-            payload = jwt.decode(
+            raw_payload = jwt.decode(
                 token,
                 self._secret_key,
                 algorithms=[self._algorithm],
             )
-
-            service = payload.get("service")
-            if not service:
-                raise InvalidTokenError()
-
-            return payload
+            return TokenPayload.model_validate(raw_payload)
 
         except ExpiredSignatureError:
             raise TokenExpiredError()
-        except JWTInvalidTokenError:
+        except (JWTInvalidTokenError, ValidationError):
             raise InvalidTokenError()
 
     def get_service_name(self, token: str) -> str:
         """Extract service name from token."""
         payload = self.verify_token(token)
-        return payload.get("service")
+        return payload.service
 
 
 def create_token_service(
