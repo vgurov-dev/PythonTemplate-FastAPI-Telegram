@@ -63,6 +63,11 @@ class Settings(BaseSettings):
 
     alembic_config: str = Field(default="alembic.ini", validation_alias="ALEMBIC_CONFIG")
 
+    cors_origins: list[str] = Field(
+        default=["http://localhost:3000"],
+        validation_alias="CORS_ORIGINS",
+    )
+
 
 def setup_logging() -> None:
     """Configure structlog."""
