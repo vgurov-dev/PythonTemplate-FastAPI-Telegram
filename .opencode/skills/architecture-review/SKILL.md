@@ -318,6 +318,25 @@ class Settings(BaseSettings):
 - [ ] Коммит в action (unit of work), не в repository
 - [ ] AsyncSession через DI, не через глобальную переменную
 - [ ] Репозиторий возвращает domain-сущности, не SQLModel-модели
+- [ ] ID — только `int` (auto-increment), НЕ UUID
+
+**Правило:** UUID для первичных ключей не использовать. Усложняет поиск, индексы, дебаг.
+Исключение — внешние идентификаторы (telegram_id и т.п.).
+
+**ПРАВИЛЬНО:**
+```python
+# domain/entities/user.py
+class User(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    telegram_id: int = Field(unique=True)  # внешний ID — int, не UUID
+```
+
+**НЕПРАВИЛЬНО:**
+```python
+# domain/entities/user.py
+class User(SQLModel, table=True):
+    id: UUID = Field(default_factory=uuid4, primary_key=True)  # лишняя сложность!
+```
 
 **ПРАВИЛЬНО:**
 ```python

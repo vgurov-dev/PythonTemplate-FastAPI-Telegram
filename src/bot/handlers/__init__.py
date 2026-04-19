@@ -54,6 +54,7 @@ async def handle_agreement(callback: CallbackQuery) -> None:
     """Handle agreement buttons."""
     user = callback.from_user
     telegram_id = user.id
+    username = user.username
     first_name = user.first_name
     data = callback.data
 

@@ -54,6 +54,13 @@ src/backend/
 - AsyncSession для работы с БД
 - Репозитории в `infrastructure/database/repositories/`
 
+### Идентификаторы
+- НЕ использовать UUID — усложняет поиск, индексы, дебаг
+- Использовать `int` с auto-increment (SERIAL/BIGSERIAL)
+- Исключение — внешние ID (telegram_id и т.п.)
+- ПРАВИЛЬНО: `id: Optional[int] = Field(default=None, primary_key=True)`
+- НЕПРАВИЛЬНО: `id: UUID = Field(default_factory=uuid4, primary_key=True)`
+
 ## Bot слой
 
 ### Структура
