@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bootstrap.database import get_session
-from bootstrap.dependencies import verify_service_token
+from api.dependencies import verify_service_token
 from domain.exceptions import UserNotFoundError
 from application.dto.users import CreateUserRequest, UserResponse
 from application.actions.users.create import CreateUserAction, GetUserAction

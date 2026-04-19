@@ -32,13 +32,13 @@ class BaseRepository(Generic[ModelType], ABC):
     async def create(self, entity: ModelType) -> ModelType:
         """Create new entity."""
         self.session.add(entity)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(entity)
         return entity
 
     async def update(self, entity: ModelType) -> ModelType:
         """Update existing entity."""
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(entity)
         return entity
 
@@ -47,6 +47,6 @@ class BaseRepository(Generic[ModelType], ABC):
         entity = await self.get(id)
         if entity:
             await self.session.delete(entity)
-            await self.session.commit()
+            await self.session.flush()
             return True
         return False

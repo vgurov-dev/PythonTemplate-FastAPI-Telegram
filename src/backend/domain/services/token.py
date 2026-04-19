@@ -6,16 +6,7 @@ from jwt.exceptions import ExpiredSignatureError, InvalidTokenError as JWTInvali
 from pydantic import ValidationError
 
 from application.dto.token import TokenPayload
-
-
-class TokenExpiredError(Exception):
-    """Raised when token is expired."""
-    pass
-
-
-class TokenInvalidError(Exception):
-    """Raised when token is invalid."""
-    pass
+from domain.exceptions import TokenExpiredError, TokenInvalidError
 
 
 class TokenDomainService:

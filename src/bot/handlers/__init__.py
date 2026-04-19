@@ -1,12 +1,11 @@
 """Registration handlers."""
 from datetime import datetime
 
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
 import structlog
 
-from bot.app.config import settings
-from bot.database import async_session
+from bot.app.dependencies import get_signup_service
 from bot.handlers.registration import CONSENT_TEXT
 from bot.keyboards.registration import get_agreement_keyboard
 from bot.models.signup import SignupStatus
@@ -26,10 +25,10 @@ async def cmd_start(message: Message) -> None:
     username = user.username
     first_name = user.first_name
 
-    async with async_session() as session:
-        service = SignupService(session)
-
-        existing = await service.get_by_telegram_id(telegram_id)
+    service = get_signup_service()
+    async with service.session as session:
+        service_instance = SignupService(session)
+        existing = await service_instance.get_by_telegram_id(telegram_id)
         if existing and existing.status == SignupStatus.CONFIRMED.value:
             await message.answer(
                 f"Привет, {first_name}!\n\n"
@@ -37,7 +36,7 @@ async def cmd_start(message: Message) -> None:
             )
             return
 
-        await service.create_signup(
+        await service_instance.create_signup(
             telegram_id=telegram_id,
             username=username,
             first_name=first_name,
@@ -49,31 +48,21 @@ async def cmd_start(message: Message) -> None:
     )
 
 
-@router.callback_query()
-async def handle_agreement(callback: CallbackQuery) -> None:
-    """Handle agreement buttons."""
+@router.callback_query(F.data == "agree")
+async def handle_agree(callback: CallbackQuery) -> None:
+    """Handle agreement confirmation."""
     user = callback.from_user
     telegram_id = user.id
     username = user.username
     first_name = user.first_name
-    data = callback.data
 
     await callback.answer()
 
-    if data == "disagree":
-        await callback.message.delete()
-        await callback.message.answer(
-            "❌ Нажмите /start повторно, когда будете согласны.",
-        )
-        return
+    service = get_signup_service()
+    async with service.session as session:
+        service_instance = SignupService(session)
 
-    if data != "agree":
-        return
-
-    async with async_session() as session:
-        service = SignupService(session)
-
-        if await service.is_confirmed(telegram_id):
+        if await service_instance.is_confirmed(telegram_id):
             await callback.message.delete()
             await callback.message.answer(
                 f"Привет, {first_name}!\n\n"
@@ -81,7 +70,7 @@ async def handle_agreement(callback: CallbackQuery) -> None:
             )
             return
 
-        await service.update_status(
+        await service_instance.update_status(
             telegram_id=telegram_id,
             status=SignupStatus.CONFIRMED,
         )
@@ -98,4 +87,15 @@ async def handle_agreement(callback: CallbackQuery) -> None:
     await callback.message.answer(
         f"✅ Спасибо, {first_name}!\n\n"
         "Вы успешно зарегистрированы.",
+    )
+
+
+@router.callback_query(F.data == "disagree")
+async def handle_disagree(callback: CallbackQuery) -> None:
+    """Handle disagreement."""
+    await callback.answer()
+
+    await callback.message.delete()
+    await callback.message.answer(
+        "❌ Нажмите /start повторно, когда будете согласны.",
     )

@@ -213,46 +213,51 @@ app.add_middleware(
 
 ### 1.4 Перенести commit из Repository в Action
 
-**Файл:** `src/backend/infrastructure/database/repositories/user.py:37`
+**Проблема:** `commit()` вызывается в репозиториях — теряется контроль над транзакцией.
 
-**Проблема:** `commit()` вызывается в репозитории — теряется контроль над транзакцией.
+Затронутые файлы:
+- `src/backend/infrastructure/database/repositories/user.py:37`
+- `src/backend/infrastructure/database/repositories/__init__.py:35,41,50` (BaseRepository)
 
-```python
-# Сейчас
-async def create(self, ...) -> User:
-    user = User(...)
-    self.session.add(user)
-    await self.session.commit()  # ❌
-    await self.session.refresh(user)
-    return user
-```
-
-**Решение:** Убрать commit из репозитория, вызывать в Action.
+**Решение:** Убрать commit из всех репозиториев, вызывать в Action.
 
 **Шаги:**
-1. Открыть `src/backend/infrastructure/database/repositories/user.py`
-2. Изменить метод `create`:
+
+1. `src/backend/infrastructure/database/repositories/user.py` — заменить `commit` на `flush`:
    ```python
-   async def create(
-       self,
-       telegram_id: int,
-       username: Optional[str],
-       first_name: str,
-   ) -> User:
-       """Create new user (no commit — call session.commit() in action)."""
-       user = User(
-           telegram_id=telegram_id,
-           username=username,
-           first_name=first_name,
-       )
+   async def create(self, telegram_id: int, username: Optional[str], first_name: str) -> User:
+       user = User(telegram_id=telegram_id, username=username, first_name=first_name)
        self.session.add(user)
-       await self.session.flush()  # Получаем ID без commit
+       await self.session.flush()
        await self.session.refresh(user)
        return user
    ```
 
+2. `src/backend/infrastructure/database/repositories/__init__.py` — заменить `commit` на `flush` в BaseRepository:
+   ```python
+   async def create(self, entity: ModelType) -> ModelType:
+       self.session.add(entity)
+       await self.session.flush()
+       await self.session.refresh(entity)
+       return entity
+
+   async def update(self, entity: ModelType) -> ModelType:
+       await self.session.flush()
+       await self.session.refresh(entity)
+       return entity
+
+   async def delete(self, id: int) -> bool:
+       entity = await self.get(id)
+       if entity:
+           await self.session.delete(entity)
+           await self.session.flush()
+           return True
+       return False
+   ```
+
 **Файлы:**
-- `src/backend/infrastructure/database/repositories/user.py` — заменить `commit` на `flush`
+- `src/backend/infrastructure/database/repositories/user.py` — `commit` → `flush`
+- `src/backend/infrastructure/database/repositories/__init__.py` — `commit` → `flush`
 
 **Тест:** Интеграционный тест — создать пользователя, откатить транзакцию, проверить что в БД пусто
 
@@ -271,7 +276,6 @@ async def create(self, ...) -> User:
    ```python
    """Users DTO."""
    from typing import Optional
-   from uuid import UUID
 
    from pydantic import BaseModel, ConfigDict
 
@@ -289,12 +293,12 @@ async def create(self, ...) -> User:
 
        model_config = ConfigDict(from_attributes=True)
 
-       id: UUID
-       telegram_id: int
-       username: Optional[str]
-       first_name: str
-       is_active: bool
-   ```
+        id: int
+        telegram_id: int
+        username: Optional[str]
+        first_name: str
+        is_active: bool
+    ```
 2. Удалить `UserCreateSchema` и `UserResponse` из `src/backend/api/routers/users.py`
 3. Обновить импорты в роутере (см. шаг 1.3)
 
@@ -352,32 +356,30 @@ async def create(self, ...) -> User:
 
 ### 1.7 Унифицировать `verify_service_token`
 
-**Проблема:** Дублирование в `src/backend/api/routers/auth.py:54` и `src/backend/bootstrap/dependencies.py:23`.
+**Перенесено в шаг 1.13** — объединение всех зависимостей в `api/dependencies.py`.
 
-**Решение:** Оставить только в `bootstrap/dependencies.py`, убрать из `auth.py`.
+Для справки — текущая проблема:
+- `src/backend/api/routers/auth.py:54` — JWT-проверка
+- `src/backend/bootstrap/dependencies.py:23` — простое сравнение строки
 
-**Шаги:**
-1. Открыть `src/backend/api/routers/auth.py`
-2. Удалить функцию `verify_service_token` (строки 54-71)
-3. Добавить импорт:
-   ```python
-   from bootstrap.dependencies import verify_service_token
-   ```
-4. Проверить что `users.py` уже импортирует из `bootstrap.dependencies` (да, строка 10)
-
-**Файлы:**
-- `src/backend/api/routers/auth.py` — удалить дубликат
+Логика несовместима. Решение описано в 1.13.
 
 ---
 
 ## P2 — Средний приоритет
 
-### 1.8 Создать domain exceptions
+### 1.8 Создать domain exceptions (и убрать дубликаты)
 
-**Проблема:** `HTTPException` используется напрямую вместо доменных исключений.
+**Проблема:**
+1. `HTTPException` используется напрямую вместо доменных исключений
+2. `TokenExpiredError` и `TokenInvalidError` определены дважды:
+   - `src/backend/domain/services/token.py:11-17` (наследуют `Exception`)
+   - `src/backend/domain/exceptions.py` — если существует, дублирует
+
+**Решение:** Единые доменные исключения в `domain/exceptions.py`, импорт оттуда.
 
 **Шаги:**
-1. Создать `src/backend/domain/exceptions.py`:
+1. Создать/обновить `src/backend/domain/exceptions.py`:
    ```python
    """Domain exceptions."""
 
@@ -401,35 +403,43 @@ async def create(self, ...) -> User:
        """Token invalid."""
        pass
    ```
-2. Обновить `src/backend/bootstrap/exceptions.py` — добавить маппинг:
-   ```python
-   from domain.exceptions import UserNotFoundError, DomainError
 
-   # ... существующий код ...
+2. Удалить `TokenExpiredError` и `TokenInvalidError` из `src/backend/domain/services/token.py`, заменить импортом:
+   ```python
+   from domain.exceptions import TokenExpiredError, TokenInvalidError
+   ```
+
+3. Обновить `src/backend/bootstrap/exceptions.py` — добавить exception handlers:
+   ```python
+   from fastapi import FastAPI
+   from fastapi.responses import JSONResponse
+   from domain.exceptions import UserNotFoundError, DomainError
 
    def setup_exception_handlers(app: FastAPI) -> None:
        """Register domain exception handlers."""
 
        @app.exception_handler(UserNotFoundError)
        async def user_not_found_handler(request, exc):
-           return JSONResponse(
-               status_code=404,
-               content={"detail": str(exc)},
-           )
+           return JSONResponse(status_code=404, content={"detail": str(exc)})
 
        @app.exception_handler(DomainError)
        async def domain_error_handler(request, exc):
-           return JSONResponse(
-               status_code=400,
-               content={"detail": str(exc)},
-           )
+           return JSONResponse(status_code=400, content={"detail": str(exc)})
    ```
-3. Вызвать `setup_exception_handlers(app)` в `src/backend/bootstrap/main.py` после создания app
+
+4. Вызвать `setup_exception_handlers(app)` в `src/backend/bootstrap/main.py` после создания app
+
+5. Обновить импорты в `src/backend/application/actions/auth/refresh.py` — импортировать из `domain.exceptions`:
+   ```python
+   from domain.exceptions import TokenDomainService, TokenInvalidError, TokenExpiredError
+   ```
 
 **Файлы:**
-- `src/backend/domain/exceptions.py` — новый
+- `src/backend/domain/exceptions.py` — создать/обновить
+- `src/backend/domain/services/token.py` — удалить дубликаты, добавить импорт
 - `src/backend/bootstrap/exceptions.py` — добавить handlers
 - `src/backend/bootstrap/main.py` — вызвать setup
+- `src/backend/application/actions/auth/refresh.py` — обновить импорт
 
 ---
 
@@ -574,11 +584,243 @@ ALTER TABLE signups ADD COLUMN id BIGSERIAL PRIMARY KEY;
 
 ---
 
+### 1.13 Объединить `verify_service_token` и зависимости в `api/dependencies.py`
+
+**Проблема:** Зависимости разбросаны:
+- `src/backend/api/routers/auth.py:54` — свой `verify_service_token` (JWT)
+- `src/backend/bootstrap/dependencies.py:23` — другой `verify_service_token` (header)
+- `src/backend/api/routers/depends.py` — ещё один набор зависимостей
+
+Логика несовместима: `auth.py` проверяет JWT, `bootstrap/dependencies.py` сравнивает строку.
+
+**Решение:** Один модуль `api/dependencies.py` с единой логикой JWT-верификации.
+
+**Шаги:**
+
+1. Переписать `src/backend/api/dependencies.py` — объединить всё:
+   ```python
+   """API dependencies."""
+   from functools import lru_cache
+   from typing import Annotated, AsyncGenerator
+
+   from fastapi import Depends, Header
+   from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+   from sqlalchemy.ext.asyncio import AsyncSession
+
+   from bootstrap.config import settings
+   from bootstrap.database import get_session
+   from bootstrap.exceptions import UnauthorizedException
+   from domain.services.token import TokenDomainService, TokenInvalidError, create_token_service
+
+   security = HTTPBearer(auto_error=False)
+
+
+   @lru_cache
+   def get_token_service() -> TokenDomainService:
+       """Get token service instance."""
+       return create_token_service(
+           secret_key=settings.jwt_secret_key,
+           algorithm=settings.jwt_algorithm,
+       )
+
+
+   def verify_service_token(
+       credentials: HTTPAuthorizationCredentials = Depends(security),
+   ) -> TokenDomainService:
+       """Verify JWT service token."""
+       if not credentials:
+           raise UnauthorizedException(detail="Service token required")
+       token_service = get_token_service()
+       try:
+           return token_service.verify_token(credentials.credentials)
+       except TokenInvalidError:
+           raise UnauthorizedException(detail="Invalid token")
+
+
+   async def get_db() -> AsyncGenerator[AsyncSession, None]:
+       """Dependency for database session."""
+       async for session in get_session():
+           yield session
+
+
+   DBSession = Annotated[AsyncSession, Depends(get_db)]
+   ```
+
+2. Удалить `src/backend/api/routers/depends.py` — перенести нужные импорты
+
+3. Удалить `verify_service_token` из `src/backend/api/routers/auth.py` (строки 54-71), использовать импорт:
+   ```python
+   from api.dependencies import verify_service_token, get_token_service
+   ```
+
+4. Удалить `verify_service_token` из `src/backend/bootstrap/dependencies.py`
+
+5. Обновить импорт в `src/backend/api/routers/users.py`:
+   ```python
+   from api.dependencies import verify_service_token
+   ```
+
+**Файлы:**
+- `src/backend/api/dependencies.py` — переписать
+- `src/backend/api/routers/depends.py` — удалить
+- `src/backend/api/routers/auth.py` — удалить дубликат, обновить импорт
+- `src/backend/bootstrap/dependencies.py` — удалить `verify_service_token`
+- `src/backend/api/routers/users.py` — обновить импорт
+
+---
+
+### 1.14 DI для Bot через aiogram Depends
+
+**Проблема:** Bot handlers создают сессию вручную:
+```python
+# src/bot/handlers/__init__.py:29
+async with async_session() as session:
+    service = SignupService(session)
+```
+
+Нарушает: «Не инстанцировать сервисы вручную в роутерах».
+
+**Решение:** Использовать aiogram Depends для инъекции сессии.
+
+**Шаги:**
+
+1. Создать `src/bot/app/dependencies.py`:
+   ```python
+   """Bot dependencies."""
+   from typing import AsyncGenerator
+
+   from aiogram import Router
+   from sqlalchemy.ext.asyncio import AsyncSession
+
+   from bot.database import async_session
+   from bot.services.signup import SignupService
+
+
+   async def get_bot_session() -> AsyncGenerator[AsyncSession, None]:
+       """Get bot database session."""
+       async with async_session() as session:
+           yield session
+
+
+   def get_signup_service(session: AsyncSession = Depends(get_bot_session)) -> SignupService:
+       """Get signup service."""
+       return SignupService(session)
+   ```
+
+2. Обновить `src/bot/handlers/__init__.py` — использовать Depends:
+   ```python
+   from aiogram import Router, F
+   from aiogram.types import CallbackQuery, Message
+   from aiogram.fsm.context import FSMContext
+
+   from bot.app.dependencies import get_signup_service
+   from bot.models.signup import SignupStatus
+
+   router = Router()
+
+
+   @router.message()
+   async def cmd_start(
+       message: Message,
+       service: SignupService = Depends(get_signup_service),
+   ) -> None:
+       telegram_id = message.from_user.id
+       username = message.from_user.username
+       first_name = message.from_user.first_name
+
+       existing = await service.get_by_telegram_id(telegram_id)
+       if existing and existing.status == SignupStatus.CONFIRMED.value:
+           await message.answer(f"Привет, {first_name}! Вы уже подтвердили.")
+           return
+
+       await service.create_signup(telegram_id=telegram_id, username=username, first_name=first_name)
+       await message.answer(f"Привет, {first_name}!\n\n{CONSENT_TEXT}", reply_markup=get_agreement_keyboard())
+
+
+   @router.callback_query(F.data == "agree")
+   async def handle_agree(
+       callback: CallbackQuery,
+       service: SignupService = Depends(get_signup_service),
+   ) -> None:
+       telegram_id = callback.from_user.id
+       first_name = callback.from_user.first_name
+       username = callback.from_user.username
+
+       await callback.answer()
+
+       if await service.is_confirmed(telegram_id):
+           await callback.message.delete()
+           await callback.message.answer(f"Привет, {first_name}! Вы уже подтвердили.")
+           return
+
+       await service.update_status(telegram_id=telegram_id, status=SignupStatus.CONFIRMED)
+       sync_user_to_backend.delay(telegram_id=telegram_id, username=username, first_name=first_name)
+
+       await callback.message.delete()
+       await callback.message.answer(f"Спасибо, {first_name}! Вы успешно зарегистрированы.")
+   ```
+
+**Файлы:**
+- `src/bot/app/dependencies.py` — новый
+- `src/bot/handlers/__init__.py` — рефакторинг
+
+---
+
+### 1.15 `get_current_user` — возвращать DTO вместо dict
+
+**Проблема:** `src/backend/api/routers/depends.py:31` возвращает `dict`.
+
+**Решение:** Создать Pydantic модель и использовать её.
+
+**Шаги:**
+
+1. Добавить в `src/backend/application/dto/auth.py`:
+   ```python
+   class TokenPayloadDTO(BaseModel):
+       """Token payload DTO."""
+       service: str
+       exp: int
+       iat: int
+   ```
+
+2. Обновить `get_current_user` в `src/backend/api/dependencies.py`:
+   ```python
+   from application.dto.auth import TokenPayloadDTO
+
+   async def get_current_user(
+       credentials: HTTPAuthorizationCredentials = Depends(security),
+   ) -> TokenPayloadDTO:
+       """Get current authenticated user."""
+       if not credentials:
+           raise UnauthorizedException(detail="Not authenticated")
+       token_service = get_token_service()
+       try:
+           payload = token_service.verify_token(credentials.credentials)
+           return TokenPayloadDTO(
+               service=payload.service,
+               exp=payload.exp,
+               iat=payload.iat,
+           )
+       except TokenInvalidError:
+           raise UnauthorizedException(detail="Invalid token")
+
+
+   CurrentUser = Annotated[TokenPayloadDTO, Depends(get_current_user)]
+   ```
+
+**Файлы:**
+- `src/backend/application/dto/auth.py` — добавить `TokenPayloadDTO`
+- `src/backend/api/dependencies.py` — обновить возвращаемый тип
+
+---
+
 ## P3 — Низкий приоритет (улучшения)
 
-### 1.11 DI для Actions через Depends
+### 1.11 DI для Actions через Depends (после 1.13)
 
-**Решение:** Создать фабрику зависимостей.
+**Предусловие:** Шаг 1.13 создал `api/dependencies.py` с базовыми зависимостями.
+
+**Решение:** Добавить фабрики Actions в существующий `api/dependencies.py`.
 
 **Шаги:**
 1. Создать `src/backend/api/dependencies.py`:
@@ -618,7 +860,7 @@ ALTER TABLE signups ADD COLUMN id BIGSERIAL PRIMARY KEY;
    ```
 
 **Файлы:**
-- `src/backend/api/dependencies.py` — новый
+- `src/backend/api/dependencies.py` — добавить фабрики
 - `src/backend/api/routers/users.py` — обновить Depends
 
 ---
@@ -630,15 +872,18 @@ ALTER TABLE signups ADD COLUMN id BIGSERIAL PRIMARY KEY;
 | 1.1 | Исправить `username` в bot handler | P0 | ⬜ |
 | 1.2 | Ограничить CORS | P0 | ⬜ |
 | 1.3 | Создать CreateUserAction | P1 | ⬜ |
-| 1.4 | Перенести commit из Repository | P1 | ⬜ |
+| 1.4 | Перенести commit из Repository (включая BaseRepository) | P1 | ⬜ |
 | 1.5 | Перенести DTOs в `application/dto/` | P1 | ⬜ |
 | 1.6 | Создать UserRepositoryProtocol | P1 | ⬜ |
 | 1.7 | Унифицировать `verify_service_token` | P1 | ⬜ |
-| 1.8 | Создать domain exceptions | P2 | ⬜ |
+| 1.8 | Domain exceptions + убрать дубликаты Token*Error | P1 | ⬜ |
 | 1.9 | Исправить deprecated `datetime.utcnow()` | P2 | ⬜ |
 | 1.10 | Добавить healthchecks в dev docker-compose | P2 | ⬜ |
 | 1.11 | DI для Actions через Depends | P3 | ⬜ |
 | 1.12 | Замена UUID на int | P2 | ⬜ |
+| 1.13 | Объединить зависимости в `api/dependencies.py` | P1 | ⬜ |
+| 1.14 | DI для Bot через aiogram Depends | P2 | ⬜ |
+| 1.15 | `get_current_user` — DTO вместо dict | P2 | ⬜ |
 
 ---
 

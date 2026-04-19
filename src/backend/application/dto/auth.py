@@ -24,3 +24,11 @@ class TokenResponse(BaseModel):
     token: str
     expires_at: datetime
     service: str
+
+
+class TokenPayloadDTO(BaseModel):
+    """Token payload DTO."""
+
+    service: str
+    exp: int
+    iat: int

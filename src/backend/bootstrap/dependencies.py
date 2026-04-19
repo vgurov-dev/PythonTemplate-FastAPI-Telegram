@@ -20,17 +20,5 @@ async def get_redis() -> Redis:
     return redis_client
 
 
-async def verify_service_token(
-    x_service_token: str = Header(...),
-) -> str:
-    """Verify service token for inter-service auth."""
-    from bootstrap.config import settings
-    from bootstrap.exceptions import UnauthorizedException
-
-    if x_service_token != settings.service_key:
-        raise UnauthorizedException(detail="Invalid service token")
-    return x_service_token
-
-
 DBSession = Annotated[AsyncSession, Depends(get_db)]
 RedisClient = Annotated[Redis, Depends(get_redis)]
