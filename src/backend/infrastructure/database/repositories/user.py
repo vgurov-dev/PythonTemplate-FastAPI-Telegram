@@ -1,15 +1,15 @@
 """User repository."""
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from domain.entities.user import User
+from domain.repositories.user import UserRepositoryProtocol
 
 
-class UserRepository:
+class UserRepository(UserRepositoryProtocol):
     """User repository."""
 
     def __init__(self, session: AsyncSession):
@@ -27,14 +27,14 @@ class UserRepository:
         username: Optional[str],
         first_name: str,
     ) -> User:
-        """Create new user."""
+        """Create new user (no commit — call session.commit() in action)."""
         user = User(
             telegram_id=telegram_id,
             username=username,
             first_name=first_name,
         )
         self.session.add(user)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(user)
         return user
 

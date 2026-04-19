@@ -1,59 +1,27 @@
 """Users API router."""
-from typing import Optional
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bootstrap.database import get_session
 from bootstrap.dependencies import verify_service_token
-from infrastructure.database.repositories.user import UserRepository
+from domain.exceptions import UserNotFoundError
+from application.dto.users import CreateUserRequest, UserResponse
+from application.actions.users.create import CreateUserAction, GetUserAction
+
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-
-class UserCreateSchema(BaseModel):
-    """Schema for creating user from Telegram."""
-
-    telegram_id: int
-    username: Optional[str] = None
-    first_name: str
-
-
-class UserResponse(BaseModel):
-    """User response schema."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    telegram_id: int
-    username: Optional[str]
-    first_name: str
-    is_active: bool
 
 
 @router.post("/{telegram_id}/telegram", response_model=UserResponse)
 async def create_user_from_telegram(
     telegram_id: int,
-    data: UserCreateSchema,
+    data: CreateUserRequest,
     _service_token: str = Depends(verify_service_token),
     session: AsyncSession = Depends(get_session),
 ) -> UserResponse:
     """Create or update user from Telegram bot."""
-    repo = UserRepository(session)
-
-    existing = await repo.get_by_telegram_id(telegram_id)
-    if existing:
-        return existing
-
-    user = await repo.create(
-        telegram_id=data.telegram_id,
-        username=data.username,
-        first_name=data.first_name,
-    )
-
-    return user
+    action = CreateUserAction(session)
+    return await action.execute(telegram_id, data)
 
 
 @router.get("/{telegram_id}", response_model=UserResponse)
@@ -63,13 +31,11 @@ async def get_user(
     session: AsyncSession = Depends(get_session),
 ) -> UserResponse:
     """Get user by Telegram ID."""
-    repo = UserRepository(session)
-
-    user = await repo.get_by_telegram_id(telegram_id)
-    if not user:
+    action = GetUserAction(session)
+    try:
+        return await action.execute(telegram_id)
+    except UserNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-
-    return user
