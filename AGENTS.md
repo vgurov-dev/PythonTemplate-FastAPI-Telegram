@@ -122,7 +122,28 @@ src/webapp/
 - Smoke test: docker-compose up -d + curl
 - Тесты: docker-compose exec {service} pytest
 
+### /.opencode/skills/tester/SKILL.md
+- QA инженер: юнит, интеграционные и E2E тесты
+- Покрытие: критичные модули 80%+, остальное по возможности
+- Инструменты: pytest + telebot + Playwright
+- Отчеты: HTML coverage reports
+- CI/CD: автоматический запуск тестов на PR
+
 ### /.opencode/skills/bot/SKILL.md
 - Inline keyboard: удалять сообщение после нажатия кнопки
 - Обязательно вызывать callback.answer()
 - Создавать новое сообщение вместо старого
+
+### /.opencode/skills/architecture-review/SKILL.md
+- DDD compliance: бизнес-логика в domain/services, роутеры — orchestration only
+- Security: auth на всех endpoints, нет хардкода секретов, response_model
+- CORS: whitelist, не `*`; rate limiting на публичных endpoints
+- Infrastructure: не от root, GHCR для staging, health checks, сетевая изоляция
+- Bot: callback.answer(), удаление keyboard-сообщений, правильные импорты
+- Code quality: Poetry, конвенции именования, commit format
+- Async Patterns: async def для I/O, asyncio.to_thread для CPU-bound, AsyncSession через Depends
+- Dependency Injection: сервисы через Depends, провайдеры в api/dependencies.py
+- Error Handling: доменные исключения, exception handlers, нет утечки стеков
+- Type Safety: DTO вместо dict, явные типы возврата, validation_alias для env
+- Database Patterns: Repository pattern (протокол в domain, реализация в infrastructure), commit в action
+- Service Design: Action = один use case, stateless domain services, нет god-классов
