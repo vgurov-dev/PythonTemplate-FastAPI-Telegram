@@ -869,21 +869,21 @@ async with async_session() as session:
 
 | # | Задача | Приоритет | Статус |
 |---|--------|-----------|--------|
-| 1.1 | Исправить `username` в bot handler | P0 | ⬜ |
-| 1.2 | Ограничить CORS | P0 | ⬜ |
-| 1.3 | Создать CreateUserAction | P1 | ⬜ |
-| 1.4 | Перенести commit из Repository (включая BaseRepository) | P1 | ⬜ |
-| 1.5 | Перенести DTOs в `application/dto/` | P1 | ⬜ |
-| 1.6 | Создать UserRepositoryProtocol | P1 | ⬜ |
-| 1.7 | Унифицировать `verify_service_token` | P1 | ⬜ |
-| 1.8 | Domain exceptions + убрать дубликаты Token*Error | P1 | ⬜ |
-| 1.9 | Исправить deprecated `datetime.utcnow()` | P2 | ⬜ |
-| 1.10 | Добавить healthchecks в dev docker-compose | P2 | ⬜ |
-| 1.11 | DI для Actions через Depends | P3 | ⬜ |
-| 1.12 | Замена UUID на int | P2 | ⬜ |
-| 1.13 | Объединить зависимости в `api/dependencies.py` | P1 | ⬜ |
-| 1.14 | DI для Bot через aiogram Depends | P2 | ⬜ |
-| 1.15 | `get_current_user` — DTO вместо dict | P2 | ⬜ |
+| 1.1 | Исправить `username` в bot handler | P0 | ✅ |
+| 1.2 | Ограничить CORS | P0 | ✅ |
+| 1.3 | Создать CreateUserAction | P1 | ✅ |
+| 1.4 | Перенести commit из Repository (включая BaseRepository) | P1 | ✅ |
+| 1.5 | Перенести DTOs в `application/dto/` | P1 | ✅ |
+| 1.6 | Создать UserRepositoryProtocol | P1 | ✅ |
+| 1.7 | Унифицировать `verify_service_token` | P1 | ⬜ (skip: разные цели) |
+| 1.8 | Domain exceptions + убрать дубликаты Token*Error | P1 | ✅ |
+| 1.9 | Исправить deprecated `datetime.utcnow()` | P2 | ✅ |
+| 1.10 | Добавить healthchecks в dev docker-compose | P2 | ✅ |
+| 1.11 | DI для Actions через Depends | P3 | ✅ |
+| 1.12 | Замена UUID на int | P2 | ⬜ (blocked: нужен run) |
+| 1.13 | Объединить зависимости в `api/dependencies.py` | P1 | ✅ |
+| 1.14 | DI для Bot через aiogram Depends | P2 | ✅ |
+| 1.15 | `get_current_user` — DTO вместо dict | P2 | ✅ |
 
 ---
 
