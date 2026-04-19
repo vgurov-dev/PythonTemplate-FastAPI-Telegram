@@ -1,5 +1,5 @@
 """Signup service for bot."""
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -60,7 +60,7 @@ class SignupService:
             .where(Signup.telegram_id == telegram_id)
             .values(
                 status=status.value,
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc),
             )
             .returning(Signup.id)
         )

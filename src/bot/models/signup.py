@@ -1,5 +1,5 @@
 """Signup model for bot database."""
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 from uuid import UUID, uuid4
@@ -9,6 +9,11 @@ from sqlalchemy.dialects.postgresql import BIGINT, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bot.models.base import Base
+
+
+def utc_now() -> datetime:
+    """Return current UTC datetime."""
+    return datetime.now(timezone.utc)
 
 
 class SignupStatus(str, Enum):
@@ -39,7 +44,7 @@ class Signup(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.utcnow,
+        default=utc_now,
     )
     updated_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime,
