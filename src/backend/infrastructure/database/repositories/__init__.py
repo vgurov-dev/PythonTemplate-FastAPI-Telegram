@@ -1,7 +1,6 @@
 """Database repositories package."""
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, Optional, List
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import SQLModel, select as sqlmodel_select
@@ -17,7 +16,7 @@ class BaseRepository(Generic[ModelType], ABC):
         self.model = model
         self.session = session
 
-    async def get(self, id: UUID) -> Optional[ModelType]:
+    async def get(self, id: int) -> Optional[ModelType]:
         """Get entity by ID."""
         statement = sqlmodel_select(self.model).where(self.model.id == id)
         result = await self.session.execute(statement)
@@ -42,7 +41,7 @@ class BaseRepository(Generic[ModelType], ABC):
         await self.session.refresh(entity)
         return entity
 
-    async def delete(self, id: UUID) -> bool:
+    async def delete(self, id: int) -> bool:
         """Delete entity by ID."""
         entity = await self.get(id)
         if entity:

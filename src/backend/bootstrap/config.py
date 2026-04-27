@@ -21,7 +21,6 @@ class Settings(BaseSettings):
     app_debug: bool = Field(default=False, validation_alias="APP_DEBUG")
 
     database_url: str = Field(
-        default="postgresql+asyncpg://user:password@localhost:5432/myservice",
         validation_alias="DATABASE_URL",
     )
     database_pool_size: int = Field(default=10, validation_alias="DATABASE_POOL_SIZE")
@@ -41,7 +40,7 @@ class Settings(BaseSettings):
     )
 
     jwt_secret_key: str = Field(
-        default="your-secret-key-here", validation_alias="JWT_SECRET_KEY"
+        validation_alias="JWT_SECRET_KEY",
     )
     jwt_algorithm: str = Field(default="HS256", validation_alias="JWT_ALGORITHM")
     jwt_access_token_expire_minutes: int = Field(
@@ -52,7 +51,7 @@ class Settings(BaseSettings):
     )
 
     service_key: str = Field(
-        default="service-secret-key", validation_alias="SERVICE_KEY"
+        validation_alias="SERVICE_KEY",
     )
     service_token_expire_seconds: int = Field(
         default=86400, validation_alias="SERVICE_TOKEN_EXPIRE_SECONDS"
@@ -69,6 +68,15 @@ class Settings(BaseSettings):
     )
 
 
+def mask_secrets(logger, method_name, event_dict):
+    """Mask secrets in log entries."""
+    sensitive_keys = {"secret", "password", "token", "key", "service_key", "jwt"}
+    for key in list(event_dict.keys()):
+        if any(s in key.lower() for s in sensitive_keys):
+            event_dict[key] = "***MASKED***"
+    return event_dict
+
+
 def setup_logging() -> None:
     """Configure structlog."""
     logging.basicConfig(
@@ -83,6 +91,7 @@ def setup_logging() -> None:
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
+        mask_secrets,
     ]
 
     if settings.log_format == "json":
@@ -99,5 +108,22 @@ def setup_logging() -> None:
     )
 
 
+def validate_secrets() -> None:
+    """Validate that secrets are not defaults."""
+    dangerous_defaults = {
+        "jwt_secret_key": ["your-secret-key-here"],
+        "service_key": ["service-secret-key"],
+        "database_url": ["postgresql+asyncpg://user:password@localhost:5432/myservice"],
+    }
+    for key, defaults in dangerous_defaults.items():
+        current = getattr(settings, key, None)
+        if current in defaults:
+            raise ValueError(
+                f"CRITICAL: {key} is still at default/placeholder value! "
+                f"Change it in production."
+            )
+
+
 settings = Settings()
+validate_secrets()
 setup_logging()

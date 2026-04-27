@@ -5,7 +5,7 @@ import jwt
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError as JWTInvalidTokenError
 from pydantic import ValidationError
 
-from application.dto.token import TokenPayload
+from domain.value_objects.token import TokenPayload
 from domain.exceptions import TokenExpiredError, TokenInvalidError
 
 

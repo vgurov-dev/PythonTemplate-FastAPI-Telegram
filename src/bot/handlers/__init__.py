@@ -1,11 +1,9 @@
 """Registration handlers."""
-from datetime import datetime
-
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
 import structlog
 
-from bot.app.dependencies import get_signup_service
+from bot.database import async_session
 from bot.handlers.registration import CONSENT_TEXT
 from bot.keyboards.registration import get_agreement_keyboard
 from bot.models.signup import SignupStatus
@@ -25,10 +23,9 @@ async def cmd_start(message: Message) -> None:
     username = user.username
     first_name = user.first_name
 
-    service = get_signup_service()
-    async with service.session as session:
-        service_instance = SignupService(session)
-        existing = await service_instance.get_by_telegram_id(telegram_id)
+    async with async_session() as session:
+        service = SignupService(session)
+        existing = await service.get_by_telegram_id(telegram_id)
         if existing and existing.status == SignupStatus.CONFIRMED.value:
             await message.answer(
                 f"Привет, {first_name}!\n\n"
@@ -36,7 +33,7 @@ async def cmd_start(message: Message) -> None:
             )
             return
 
-        await service_instance.create_signup(
+        await service.create_signup(
             telegram_id=telegram_id,
             username=username,
             first_name=first_name,
@@ -58,11 +55,10 @@ async def handle_agree(callback: CallbackQuery) -> None:
 
     await callback.answer()
 
-    service = get_signup_service()
-    async with service.session as session:
-        service_instance = SignupService(session)
+    async with async_session() as session:
+        service = SignupService(session)
 
-        if await service_instance.is_confirmed(telegram_id):
+        if await service.is_confirmed(telegram_id):
             await callback.message.delete()
             await callback.message.answer(
                 f"Привет, {first_name}!\n\n"
@@ -70,7 +66,7 @@ async def handle_agree(callback: CallbackQuery) -> None:
             )
             return
 
-        await service_instance.update_status(
+        await service.update_status(
             telegram_id=telegram_id,
             status=SignupStatus.CONFIRMED,
         )

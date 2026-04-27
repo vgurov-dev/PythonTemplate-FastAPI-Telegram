@@ -233,6 +233,25 @@ services:
     networks:
       - app-network
 
+  # ==================== DOCKER SOCKET PROXY ====================
+
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      SERVICES: 1
+      TASKS: 1
+      POST: 0
+      NETWORKS: 0
+      VOLUMES: 0
+      EXEC: 0
+      IMAGES: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app-network
+
   # ==================== PORTAINER ====================
 
   portainer:
@@ -242,10 +261,11 @@ services:
       - "9443:9443"
       - "9000:9000"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
     environment:
-      - PORTAINER_PASSWORD=${PORTAINER_PASSWORD:-admin}
+      - PORTAINER_PASSWORD=${PORTAINER_PASSWORD}
+    depends_on:
+      - docker-socket-proxy
     networks:
       - app-network
 

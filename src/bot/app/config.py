@@ -14,7 +14,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    bot_token: str = Field(default="...", validation_alias="BOT_TOKEN")
+    bot_token: str = Field(validation_alias="BOT_TOKEN")
     bot_debug: bool = Field(default=False, validation_alias="BOT_DEBUG")
 
     redis_url: str = Field(
@@ -22,7 +22,6 @@ class Settings(BaseSettings):
     )
 
     bot_database_url: str = Field(
-        default="postgresql+asyncpg://user:password@localhost:5432/botdb",
         validation_alias="BOT_DATABASE_URL",
     )
 
@@ -32,7 +31,6 @@ class Settings(BaseSettings):
     )
 
     service_key: str = Field(
-        default="service-secret-key",
         validation_alias="SERVICE_KEY",
     )
 
@@ -40,6 +38,15 @@ class Settings(BaseSettings):
     service_token_expires_at: float = Field(default=0)
 
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
+
+
+def mask_secrets(logger, method_name, event_dict):
+    """Mask secrets in log entries."""
+    sensitive_keys = {"secret", "password", "token", "key", "service_key", "jwt"}
+    for key in list(event_dict.keys()):
+        if any(s in key.lower() for s in sensitive_keys):
+            event_dict[key] = "***MASKED***"
+    return event_dict
 
 
 def setup_logging() -> None:
@@ -55,6 +62,7 @@ def setup_logging() -> None:
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
+        mask_secrets,
         structlog.processors.JSONRenderer(),
     ]
 
@@ -67,5 +75,22 @@ def setup_logging() -> None:
     )
 
 
+def validate_secrets() -> None:
+    """Validate that secrets are not defaults."""
+    dangerous_defaults = {
+        "bot_token": ["...", "your-bot-token-here"],
+        "service_key": ["service-secret-key"],
+        "bot_database_url": ["postgresql+asyncpg://user:password@localhost:5432/botdb"],
+    }
+    for key, defaults in dangerous_defaults.items():
+        current = getattr(settings, key, None)
+        if current in defaults:
+            raise ValueError(
+                f"CRITICAL: {key} is still at default/placeholder value! "
+                f"Change it in production."
+            )
+
+
 settings = Settings()
+validate_secrets()
 setup_logging()

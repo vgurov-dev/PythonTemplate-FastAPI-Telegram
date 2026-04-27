@@ -1,7 +1,6 @@
 """User entity for backend."""
 from datetime import datetime, timezone
 from typing import Optional
-from uuid import UUID, uuid4
 
 from pydantic import ConfigDict
 from sqlmodel import Field, SQLModel
@@ -13,8 +12,8 @@ class User(SQLModel, table=True):
     __tablename__ = "users"
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID = Field(
-        default_factory=uuid4,
+    id: Optional[int] = Field(
+        default=None,
         primary_key=True,
         nullable=False,
     )
