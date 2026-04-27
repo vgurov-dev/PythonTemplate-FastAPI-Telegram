@@ -51,6 +51,15 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - app-network
 
@@ -94,6 +103,10 @@ services:
       - redis
       - postgres
     command: celery -A app.main.celery worker --loglevel=info
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
     networks:
       - app-network
 

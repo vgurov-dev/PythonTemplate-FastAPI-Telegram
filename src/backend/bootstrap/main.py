@@ -8,7 +8,7 @@ from bootstrap.config import settings
 from bootstrap.database import init_db
 from bootstrap.metrics import setup_metrics
 from bootstrap.tracing import setup_tracing
-from api.routers import auth, users
+from api.routers import auth, health, users
 
 logger = structlog.get_logger()
 
@@ -39,14 +39,9 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
+app.include_router(health.router)
 app.include_router(users.router)
 app.include_router(auth.router)
-
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"status": "ok"}
 
 
 @app.get("/")
